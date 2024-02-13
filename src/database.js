@@ -51,7 +51,8 @@ export class Database {
         if (rowIndex > -1) {
             this.#database[table][rowIndex] = {
                 ...this.#database[table][rowIndex],
-                ...data,
+                title: data.title ?? this.#database[table][rowIndex].title,
+                description: data.description ?? this.#database[table][rowIndex].description,
                 updated_at: new Date().toISOString(),
             };
             this.#persist();
