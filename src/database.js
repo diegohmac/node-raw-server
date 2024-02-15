@@ -47,12 +47,24 @@ export class Database {
 
     update(table, id, data) {
         const rowIndex = this.#database[table].findIndex(row => row.id === id);
-        
+
+        const updatedData = {
+            title: data.title ?? this.#database[table][rowIndex].title,
+            description: data.description ?? this.#database[table][rowIndex].description,
+        }
+
+        if (data.complete) {
+            if (this.#database[table][rowIndex].completed_at) {
+                updatedData.completed_at = null;
+            } else {
+                updatedData.completed_at = new Date().toISOString();
+            }
+        }
+
         if (rowIndex > -1) {
             this.#database[table][rowIndex] = {
                 ...this.#database[table][rowIndex],
-                title: data.title ?? this.#database[table][rowIndex].title,
-                description: data.description ?? this.#database[table][rowIndex].description,
+                ...updatedData,
                 updated_at: new Date().toISOString(),
             };
             this.#persist();
@@ -61,7 +73,7 @@ export class Database {
 
     delete(table, id) {
         const rowIndex = this.#database[table].findIndex(row => row.id === id);
-        
+
         if (rowIndex > -1) {
             this.#database[table].splice(rowIndex, 1);
             this.#persist();
