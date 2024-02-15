@@ -24,6 +24,10 @@ export const routes = [
         handler: (req, res) => {
             const { title, description } = req.body;
 
+            if (!title || !description) {
+                return res.writeHead(400).end(JSON.stringify({ error: 'Title and description are required' }));
+            }
+
             const task = {
                 id: randomUUID(),
                 title,
@@ -45,6 +49,18 @@ export const routes = [
             const { id } = req.params;
             const { title, description } = req.body;
 
+            const tasks = database.select('tasks');
+
+            const isValidId = tasks.find(task => task.id === id);
+
+            if (!isValidId) {
+                return res.writeHead(404).end(JSON.stringify({ error: 'Task not found' }));
+            }
+
+            if (!title && !description) {
+                return res.writeHead(400).end(JSON.stringify({ error: 'At least one of title or description are required' }));
+            }
+
             database.update('tasks', id, {
                 title,
                 description,
@@ -59,18 +75,34 @@ export const routes = [
         handler: (req, res) => {
             const { id } = req.params;
 
+            const tasks = database.select('tasks');
+
+            const isValidId = tasks.find(task => task.id === id);
+
+            if (!isValidId) {
+                return res.writeHead(404).end(JSON.stringify({ error: 'Task not found' }));
+            }
+
             database.update('tasks', id, {
                 complete: true,
             });
 
             res.writeHead(204).end();
-         },
+        },
     },
     {
         method: 'DELETE',
         path: buildRoutePath('/tasks/:id'),
         handler: (req, res) => {
             const { id } = req.params;
+
+            const tasks = database.select('tasks');
+
+            const isValidId = tasks.find(task => task.id === id);
+
+            if (!isValidId) {
+                return res.writeHead(404).end(JSON.stringify({ error: 'Task not found' }));
+            }
 
             database.delete('tasks', id);
 
