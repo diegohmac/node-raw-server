@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import { parse } from 'csv-parse';
 
 import { Database } from './database.js';
 import { buildRoutePath } from './utils/build-route-path.js';
@@ -16,6 +18,48 @@ export const routes = [
                 description: search,
             } : null);
             return res.end(JSON.stringify(tasks));
+        },
+    },
+    {
+        method: 'POST',
+        path: buildRoutePath('/tasks/read-csv'),
+        handler: async (req, res) => {
+            const processFile = async () => {
+                const records = [];
+                const parser = fs
+                    .createReadStream(`./test.csv`)
+                    .pipe(parse());
+                for await (const record of parser) {
+                    records.push(record);
+                }
+                return records;
+            };
+
+            const records = await processFile();
+
+            if (!records) {
+                res.writeHead(400).end(JSON.stringify({ error: 'Invalid file' }));
+            }
+            
+            if (records.length === 0) {
+                res.writeHead(400).end(JSON.stringify({ error: 'Empty file' }));
+            }
+            
+            records.splice(0, 1);
+            records.forEach(record => {
+                const [title, description] = record;
+                const task = {
+                    id: randomUUID(),
+                    title,
+                    description,
+                    completed_at: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+                database.insert('tasks', task);
+            });
+
+            res.writeHead(201).end();
         },
     },
     {
